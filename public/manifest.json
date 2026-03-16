@@ -1,0 +1,32 @@
+{
+  "name": "DGT Sounds - African Music Streaming",
+  "short_name": "DGT Sounds",
+  "description": "Stream hottest tracks - Afrobeats, Hip Hop, R&B, Amapiano and more",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#FDB913",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/dowa_logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/dowa_logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/dowa_logo.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["music", "entertainment"],
+  "lang": "en-US"
+}

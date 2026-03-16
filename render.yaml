@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: pamodzi
+    env: node
+    region: frankfurt
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npx serve dist -s -l $PORT
+    envVars:
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-XSS-Protection
+        value: 1; mode=block
+      - path: /*
+        name: Cache-Control
+        value: public, max-age=300
+      - path: /*
+        name: Access-Control-Allow-Origin
+        value: '*'

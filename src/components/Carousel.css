@@ -1,0 +1,78 @@
+.carousel-section {
+  padding: 60px 0;
+  background: var(--bg-dark);
+}
+
+.carousel-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.carousel-wrapper {
+  position: relative;
+}
+
+.carousel-track {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 10px 0;
+}
+
+.carousel-track::-webkit-scrollbar {
+  display: none;
+}
+
+.carousel-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--bg-card);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+  z-index: 10;
+  opacity: 0;
+}
+
+.carousel-nav:hover {
+  background: var(--accent-orange);
+  border-color: var(--accent-orange);
+}
+
+.carousel-wrapper:hover .carousel-nav {
+  opacity: 1;
+}
+
+.carousel-nav.prev {
+  left: -22px;
+}
+
+.carousel-nav.next {
+  right: -22px;
+}
+
+@media (max-width: 768px) {
+  .carousel-nav {
+    opacity: 1;
+  }
+  
+  .carousel-nav.prev {
+    left: 0;
+  }
+  
+  .carousel-nav.next {
+    right: 0;
+  }
+}

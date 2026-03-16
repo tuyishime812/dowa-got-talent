@@ -1,0 +1,151 @@
+import { useState, useEffect } from 'react'
+import { supabase } from '../../lib/supabase'
+import AdminLayout from '../../components/admin/AdminLayout'
+import { Music, Disc, Mic2, Users, TrendingUp, Download } from 'lucide-react'
+import './Dashboard.css'
+
+export default function Dashboard() {
+  const [stats, setStats] = useState({
+    songs: 0,
+    albums: 0,
+    artists: 0,
+    plays: 0,
+    downloads: 0
+  })
+  const [recentSongs, setRecentSongs] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    try {
+      fetchStats()
+      fetchRecentSongs()
+    } catch (err) {
+      console.error('Dashboard error:', err)
+      setError(err.message)
+    }
+  }, [])
+
+  const fetchStats = async () => {
+    try {
+      const [songs, albums, artists] = await Promise.all([
+        supabase.from('songs').select('id', { count: 'exact' }),
+        supabase.from('albums').select('id', { count: 'exact' }),
+        supabase.from('artists').select('id', { count: 'exact' })
+      ])
+
+      // Get total plays and downloads
+      const playsResult = await supabase.from('songs').select('play_count')
+      const downloadsResult = await supabase.from('songs').select('download_count')
+      
+      const totalPlays = playsResult.data?.reduce((sum, s) => sum + (s.play_count || 0), 0) || 0
+      const totalDownloads = downloadsResult.data?.reduce((sum, s) => sum + (s.download_count || 0), 0) || 0
+
+      setStats({
+        songs: songs.count || 0,
+        albums: albums.count || 0,
+        artists: artists.count || 0,
+        plays: totalPlays,
+        downloads: totalDownloads
+      })
+    } catch (error) {
+      console.error('Error fetching stats:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchRecentSongs = async () => {
+    try {
+      const { data } = await supabase
+        .from('songs')
+        .select(`
+          *,
+          artists (name)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(5)
+
+      if (data) {
+        setRecentSongs(data)
+      }
+    } catch (error) {
+      console.error('Error fetching recent songs:', error)
+    }
+  }
+
+  const statCards = [
+    { title: 'Total Songs', value: stats.songs, icon: Music, color: '#ff6b35' },
+    { title: 'Total Albums', value: stats.albums, icon: Disc, color: '#4a3b6e' },
+    { title: 'Total Artists', value: stats.artists, icon: Mic2, color: '#22c55e' },
+    { title: 'Total Plays', value: stats.plays.toLocaleString(), icon: TrendingUp, color: '#3b82f6' },
+    { title: 'Total Downloads', value: stats.downloads.toLocaleString(), icon: Download, color: '#8b5cf6' }
+  ]
+
+  return (
+    <AdminLayout>
+      <div className="dashboard">
+        {error && (
+          <div className="error-banner" style={{ padding: '20px', background: 'rgba(239, 68, 68, 0.2)', borderRadius: '8px', marginBottom: '20px' }}>
+            <h3>Error Loading Dashboard</h3>
+            <p>{error}</p>
+          </div>
+        )}
+        <div className="stats-grid">
+          {statCards.map((stat, index) => (
+            <div key={index} className="stat-card">
+              <div className="stat-icon" style={{ background: `${stat.color}20`, color: stat.color }}>
+                <stat.icon size={24} />
+              </div>
+              <div className="stat-info">
+                <span className="stat-label">{stat.title}</span>
+                <span className="stat-value">{loading ? '-' : stat.value}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="recent-section">
+          <h2 className="section-title">Recently Added Songs</h2>
+          <div className="recent-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Artist</th>
+                  <th>Plays</th>
+                  <th>Downloads</th>
+                  <th>Date Added</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan={5}>Loading...</td>
+                  </tr>
+                ) : recentSongs.length === 0 ? (
+                  <tr>
+                    <td colSpan={5}>No songs yet. Add your first song!</td>
+                  </tr>
+                ) : (
+                  recentSongs.map((song) => (
+                    <tr key={song.id}>
+                      <td className="song-cell">
+                        <img src={song.cover_url || 'https://via.placeholder.com/40'} alt="" className="song-cover" />
+                        <span>{song.title}</span>
+                      </td>
+                      <td>{song.artists?.name || 'Unknown'}</td>
+                      <td>{song.play_count || 0}</td>
+                      <td>{song.download_count || 0}</td>
+                      <td>{new Date(song.created_at).toLocaleDateString()}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </AdminLayout>
+  )
+}
