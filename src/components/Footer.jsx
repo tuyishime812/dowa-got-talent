@@ -26,15 +26,15 @@ export default function Footer() {
             <div className="footer-contact">
               <div className="contact-item">
                 <Mail size={16} />
-                <a href="mailto:jeterothako276@gmail.com" style="color: inherit; text-decoration: none;">jeterothako276@gmail.com</a>
+                <span><a href="mailto:jeterothako276@gmail.com" style="color: inherit; text-decoration: none;">jeterothako276@gmail.com</a></span>
               </div>
               <div className="contact-item">
                 <Phone size={16} />
-                <a href="tel:+265991368564" style="color: inherit; text-decoration: none;">+265 991 368 564 (Malawi)</a>
+                <span><a href="tel:+265991368564" style="color: inherit; text-decoration: none;">+265 991 368 564 (Malawi)</a></span>
               </div>
               <div className="contact-item">
                 <Phone size={16} />
-                <a href="tel:+972512563221" style="color: inherit; text-decoration: none;">051 256 3221 (Israel)</a>
+                <span><a href="tel:+972512563221" style="color: inherit; text-decoration: none;">051 256 3221 (Israel)</a></span>
               </div>
               <div className="contact-item">
                 <MapPin size={16} />
