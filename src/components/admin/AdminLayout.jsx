@@ -107,7 +107,12 @@ export default function AdminLayout({ children }) {
             {navItems.find(item => item.path === location.pathname)?.label || 'Admin'}
           </h1>
           <div className="header-actions">
-            <a href="/" target="_blank" className="btn btn-secondary btn-sm">
+            <a 
+              href={import.meta.env.VITE_SITE_URL || window.location.origin} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="btn btn-secondary btn-sm"
+            >
               <PlayCircle size={16} />
               View Site
             </a>

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useToast } from '../../context/ToastContext'
 import AdminLayout from '../../components/admin/AdminLayout'
-import { Plus, Edit, Trash2, Upload, Music, X, Check } from 'lucide-react'
+import { Plus, Edit, Trash2, Upload, Music, X, Check, Share2 } from 'lucide-react'
 import './Songs.css'
 
 export default function AdminSongs() {
@@ -282,6 +282,34 @@ export default function AdminSongs() {
     }
   }
 
+  const handleShare = async (song) => {
+    const shareUrl = `${window.location.origin}/song/${song.id}`
+    const shareData = {
+      title: song.title,
+      text: `Check out "${song.title}" by ${song.artists?.name || 'Unknown Artist'} on DGT Sounds!`,
+      url: shareUrl
+    }
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData)
+        toast.success('Shared successfully!')
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('Share error:', err)
+        }
+      }
+    } else {
+      // Fallback: copy to clipboard
+      try {
+        await navigator.clipboard.writeText(shareUrl)
+        toast.success('Link copied to clipboard!')
+      } catch {
+        toast.error('Failed to share')
+      }
+    }
+  }
+
   const formatDuration = (seconds) => {
     if (!seconds) return '--:--'
     const mins = Math.floor(seconds / 60)
@@ -353,15 +381,22 @@ export default function AdminSongs() {
                       </td>
                       <td>
                         <div className="actions">
-                          <button 
-                            className="btn-icon" 
+                          <button
+                            className="btn-icon"
+                            onClick={() => handleShare(song)}
+                            title="Share"
+                          >
+                            <Share2 size={18} />
+                          </button>
+                          <button
+                            className="btn-icon"
                             onClick={() => handleOpenModal(song)}
                             title="Edit"
                           >
                             <Edit size={18} />
                           </button>
-                          <button 
-                            className="btn-icon btn-danger" 
+                          <button
+                            className="btn-icon btn-danger"
                             onClick={() => handleDelete(song.id)}
                             title="Delete"
                           >

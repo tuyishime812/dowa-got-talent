@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useMusic } from '../context/MusicContext'
-import { Play, Download, Heart, Share2, ArrowLeft, Clock, TrendingUp } from 'lucide-react'
+import { Play, Download, Heart, Share2, ArrowLeft, Clock, TrendingUp, Facebook, Twitter, MessageCircle, Link as LinkIcon, Whatsapp } from 'lucide-react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import { useToast } from '../context/ToastContext'
@@ -120,6 +120,30 @@ export default function SongDetail() {
     }
   }
 
+  const shareUrl = `${window.location.origin}/song/${id}`
+  const shareText = `Check out "${song?.title}" by ${song?.artists?.name || 'Unknown Artist'} on DGT Sounds!`
+
+  const shareToFacebook = () => {
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank', 'width=600,height=400')
+  }
+
+  const shareToTwitter = () => {
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`, '_blank', 'width=600,height=400')
+  }
+
+  const shareToWhatsapp = () => {
+    window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`, '_blank')
+  }
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      toast.success('Link copied to clipboard!')
+    } catch {
+      toast.error('Failed to copy link')
+    }
+  }
+
   if (loading) {
     return (
       <div className="song-detail-page">
@@ -208,17 +232,36 @@ export default function SongDetail() {
                 <Play size={24} fill="white" />
                 Play Now
               </button>
-              
+
               {song.is_downloadable && (
                 <button className="btn-download-large" onClick={handleDownload}>
                   <Download size={24} />
                   Download
                 </button>
               )}
-              
+
               <button className="btn-like-large" onClick={handleLike}>
                 <Heart size={24} fill={isLiked(song.id) ? '#ff6b35' : 'none'} />
               </button>
+            </div>
+
+            {/* Social Share Icons */}
+            <div className="social-share-section">
+              <h3 className="share-title">Share this song</h3>
+              <div className="social-share-icons">
+                <button className="share-icon-btn facebook" onClick={shareToFacebook} title="Share on Facebook">
+                  <Facebook size={24} />
+                </button>
+                <button className="share-icon-btn twitter" onClick={shareToTwitter} title="Share on Twitter/X">
+                  <Twitter size={24} />
+                </button>
+                <button className="share-icon-btn whatsapp" onClick={shareToWhatsapp} title="Share on WhatsApp">
+                  <Whatsapp size={24} />
+                </button>
+                <button className="share-icon-btn copy" onClick={copyLink} title="Copy Link">
+                  <LinkIcon size={24} />
+                </button>
+              </div>
             </div>
           </div>
         </div>
