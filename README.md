@@ -296,3 +296,4 @@ MIT License - Free to use for personal and commercial projects.
 For issues or questions, create an issue in the repository.
 
 **Built with ❤️ for African Music**
+""  
