@@ -30,11 +30,11 @@ export default function Footer() {
               </div>
               <div className="contact-item">
                 <Phone size={16} />
-                <span onClick={() => window.location.href = 'tel:+265991368564'} style={{cursor: 'pointer'}}>+265 991 368 564 (Malawi)</span>
+                <span onClick={() => window.location.href = 'tel:+265991368564'} style={{cursor: 'pointer'}}>+265 991 368 564</span>
               </div>
               <div className="contact-item">
                 <Phone size={16} />
-                <span onClick={() => window.location.href = 'tel:+972512563221'} style={{cursor: 'pointer'}}>051 256 3221 (Israel)</span>
+                <span onClick={() => window.location.href = 'tel:+972512563221'} style={{cursor: 'pointer'}}>051 256 3221</span>
               </div>
               <div className="contact-item">
                 <MapPin size={16} />
