@@ -15,6 +15,25 @@ function isMobile() {
 }
 
 /**
+ * Trigger download using blob method - works on all devices
+ */
+function triggerBlobDownload(blob, filename) {
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  link.style.display = 'none'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  
+  // Cleanup after a short delay
+  setTimeout(() => {
+    window.URL.revokeObjectURL(url)
+  }, 100)
+}
+
+/**
  * Download a song with embedded metadata (ID3 tags)
  * @param {Object} song - Song object with title, artist, cover art, etc.
  * @param {string} filename - Desired filename for the download
@@ -78,26 +97,12 @@ export async function downloadSongWithMetadata(song, filename = null) {
     const taggedBuffer = writer.save()
     const blob = new Blob([taggedBuffer], { type: 'audio/mpeg' })
 
-    // Create download link
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-
     // Use provided filename or generate one
     const defaultFilename = `${song.artist} - ${song.title}.mp3`
       .replace(/[^a-z0-9\s\-\.]/gi, '_') // Replace special chars
       .replace(/\s+/g, ' ') // Normalize spaces
-    link.download = filename || defaultFilename
-
-    document.body.appendChild(link)
-    link.click()
-
-    // Cleanup
-    setTimeout(() => {
-      document.body.removeChild(link)
-      window.URL.revokeObjectURL(url)
-    }, 100)
-
+    
+    triggerBlobDownload(blob, filename || defaultFilename)
     return true
   } catch (error) {
     console.error('Error adding metadata to song:', error)
@@ -116,16 +121,7 @@ export async function simpleDownload(audioUrl, filename) {
   try {
     const response = await fetch(audioUrl)
     const blob = await response.blob()
-
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = filename
-    link.style.display = 'none'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    window.URL.revokeObjectURL(url)
+    triggerBlobDownload(blob, filename)
   } catch (error) {
     console.error('Download error:', error)
     throw error

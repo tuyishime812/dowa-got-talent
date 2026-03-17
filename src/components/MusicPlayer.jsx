@@ -310,8 +310,7 @@ export default function MusicPlayer() {
         await simpleDownload(audioUrl, filename)
         toast.success('Download started (without metadata)')
       } catch (e) {
-        toast.error('Download failed. Opening in new tab...')
-        window.open(audioUrl, '_blank')
+        toast.error('Download failed. Please check your connection and try again.')
       }
     }
   }
