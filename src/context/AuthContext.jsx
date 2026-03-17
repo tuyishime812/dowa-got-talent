@@ -28,7 +28,7 @@ export function AuthProvider({ children }) {
       } else if (!error) {
         // Fallback: check if user email matches admin email
         // This is for initial setup before admin_roles table is created
-        const adminEmails = ['admin@pamodzi.com', 'mikemasanga@gmail.com']
+        const adminEmails = ['jeterothako276@gmail.com', 'admin@dgt.com']
         if (adminEmails.includes(user.email)) {
           console.log('✅ Admin email detected:', user.email)
           setIsAdmin(true)
@@ -38,7 +38,7 @@ export function AuthProvider({ children }) {
         }
       } else {
         // If table doesn't exist, fall back to email check
-        const adminEmails = ['admin@pamodzi.com', 'mikemasanga@gmail.com']
+        const adminEmails = ['jeterothako276@gmail.com', 'admin@dgt.com']
         if (adminEmails.includes(user.email)) {
           console.log('✅ Admin email detected:', user.email)
           setIsAdmin(true)
@@ -50,7 +50,7 @@ export function AuthProvider({ children }) {
     } catch (err) {
       console.log('Error checking admin status:', err)
       // Fallback to email check
-      const adminEmails = ['admin@pamodzi.com', 'mikemasanga@gmail.com']
+      const adminEmails = ['jeterothako276@gmail.com', 'admin@dgt.com']
       if (adminEmails.includes(user.email)) {
         setIsAdmin(true)
       } else {
