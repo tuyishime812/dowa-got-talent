@@ -1,7 +1,7 @@
 .albums-page {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
 .page-header {
@@ -12,20 +12,20 @@
 
 .albums-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
 }
 
 .album-card {
   background: var(--bg-card);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.1);
   transition: transform var(--transition-normal);
 }
 
 .album-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-2px);
 }
 
 .album-cover-wrapper {
@@ -42,54 +42,54 @@
 
 .featured-badge {
   position: absolute;
-  top: 10px;
-  left: 10px;
+  top: 6px;
+  left: 6px;
   background: var(--accent-orange);
   color: white;
-  font-size: 10px;
-  padding: 4px 10px;
-  border-radius: 12px;
+  font-size: 9px;
+  padding: 3px 8px;
+  border-radius: 10px;
   text-transform: uppercase;
   font-weight: 700;
 }
 
 .album-info {
-  padding: 16px;
+  padding: 10px;
 }
 
 .album-info h3 {
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 4px;
+  margin-bottom: 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .album-info p {
-  font-size: 13px;
+  font-size: 11px;
   color: var(--text-secondary);
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .album-meta {
   display: flex;
-  gap: 12px;
-  font-size: 12px;
+  gap: 8px;
+  font-size: 10px;
   color: var(--text-muted);
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 
 .album-actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 .btn-sm {
   flex: 1;
-  padding: 8px 12px;
-  font-size: 12px;
+  padding: 6px 8px;
+  font-size: 11px;
 }
 
 .btn-danger {
@@ -106,34 +106,58 @@
 .no-items {
   grid-column: 1 / -1;
   text-align: center;
-  padding: 60px 20px;
+  padding: 40px 20px;
   color: var(--text-secondary);
 }
 
-/* Reuse modal styles from Songs.css */
-.modal-overlay,
-.modal,
-.modal-header,
-.modal-form,
-.form-group,
-.file-upload,
-.file-label,
-.cover-preview,
-.checkbox-label,
-.modal-actions,
-.error-message,
-.loading {
-  /* Styles inherited from Songs.css */
+/* Modal compact styles */
+.modal {
+  max-width: 450px;
+}
+
+.modal-form {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.form-group label {
+  font-size: 13px;
+}
+
+.form-group input[type="text"],
+.form-group input[type="date"] {
+  font-size: 13px;
+  padding: 8px 12px;
+}
+
+.file-label {
+  font-size: 13px;
+  padding: 10px 16px;
+}
+
+.cover-preview {
+  max-width: 120px;
+  max-height: 120px;
+  margin-top: 10px;
+  border-radius: var(--radius-sm);
+}
+
+.checkbox-label {
+  font-size: 13px;
 }
 
 @media (max-width: 768px) {
   .albums-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
 @media (max-width: 500px) {
   .albums-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .page-header h2 {
+    font-size: 18px;
   }
 }
