@@ -46,7 +46,7 @@ export default function Contact() {
                 <Mail size={20} color="#ff6b35" />
                 <div>
                   <h3>Email</h3>
-                  <span><a href="mailto:jeterothako276@gmail.com" style="color: inherit; text-decoration: none;">jeterothako276@gmail.com</a></span>
+                  <span onClick={() => window.location.href = 'mailto:jeterothako276@gmail.com'} style={{cursor: 'pointer'}}>jeterothako276@gmail.com</span>
                 </div>
               </div>
 
@@ -54,7 +54,7 @@ export default function Contact() {
                 <Phone size={20} color="#ff6b35" />
                 <div>
                   <h3>Phone (Malawi)</h3>
-                  <span><a href="tel:+265991368564" style="color: inherit; text-decoration: none;">+265 991 368 564</a></span>
+                  <span onClick={() => window.location.href = 'tel:+265991368564'} style={{cursor: 'pointer'}}>+265 991 368 564</span>
                 </div>
               </div>
 
@@ -62,7 +62,7 @@ export default function Contact() {
                 <Phone size={20} color="#ff6b35" />
                 <div>
                   <h3>Phone (Israel)</h3>
-                  <span><a href="tel:+972512563221" style="color: inherit; text-decoration: none;">051 256 3221</a></span>
+                  <span onClick={() => window.location.href = 'tel:+972512563221'} style={{cursor: 'pointer'}}>051 256 3221</span>
                 </div>
               </div>
               

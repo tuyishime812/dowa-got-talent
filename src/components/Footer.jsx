@@ -26,15 +26,15 @@ export default function Footer() {
             <div className="footer-contact">
               <div className="contact-item">
                 <Mail size={16} />
-                <span><a href="mailto:jeterothako276@gmail.com" style="color: inherit; text-decoration: none;">jeterothako276@gmail.com</a></span>
+                <span onClick={() => window.location.href = 'mailto:jeterothako276@gmail.com'} style={{cursor: 'pointer'}}>jeterothako276@gmail.com</span>
               </div>
               <div className="contact-item">
                 <Phone size={16} />
-                <span><a href="tel:+265991368564" style="color: inherit; text-decoration: none;">+265 991 368 564 (Malawi)</a></span>
+                <span onClick={() => window.location.href = 'tel:+265991368564'} style={{cursor: 'pointer'}}>+265 991 368 564 (Malawi)</span>
               </div>
               <div className="contact-item">
                 <Phone size={16} />
-                <span><a href="tel:+972512563221" style="color: inherit; text-decoration: none;">051 256 3221 (Israel)</a></span>
+                <span onClick={() => window.location.href = 'tel:+972512563221'} style={{cursor: 'pointer'}}>051 256 3221 (Israel)</span>
               </div>
               <div className="contact-item">
                 <MapPin size={16} />
@@ -44,18 +44,18 @@ export default function Footer() {
 
             {/* Social Links */}
             <div className="footer-social">
-              <a href="https://www.facebook.com/share/1CQYbJFctv/" target="_blank" rel="noopener noreferrer" className="social-link">
+              <div className="social-link" onClick={() => window.open('https://www.facebook.com/share/1CQYbJFctv/', '_blank')} style={{cursor: 'pointer'}}>
                 <Facebook size={20} />
-              </a>
-              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="social-link">
+              </div>
+              <div className="social-link" onClick={() => window.open('https://twitter.com', '_blank')} style={{cursor: 'pointer'}}>
                 <Twitter size={20} />
-              </a>
-              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="social-link">
+              </div>
+              <div className="social-link" onClick={() => window.open('https://instagram.com', '_blank')} style={{cursor: 'pointer'}}>
                 <Instagram size={20} />
-              </a>
-              <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="social-link">
+              </div>
+              <div className="social-link" onClick={() => window.open('https://youtube.com', '_blank')} style={{cursor: 'pointer'}}>
                 <Youtube size={20} />
-              </a>
+              </div>
             </div>
           </div>
 
