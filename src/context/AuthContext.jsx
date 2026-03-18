@@ -14,7 +14,20 @@ export function AuthProvider({ children }) {
       return
     }
 
-    // Check if user has admin role in the database
+    // Method 1: Try using the is_admin() SQL function
+    try {
+      const { data, error } = await supabase.rpc('is_admin')
+      
+      if (!error && data === true) {
+        console.log('✅ User is admin (via is_admin function):', user.email)
+        setIsAdmin(true)
+        return
+      }
+    } catch (err) {
+      console.log('is_admin() function not available, using fallback:', err.message)
+    }
+
+    // Method 2: Check admin_roles table
     try {
       const { data, error } = await supabase
         .from('admin_roles')
@@ -22,40 +35,45 @@ export function AuthProvider({ children }) {
         .eq('user_id', user.id)
         .single()
 
-      if (data) {
-        console.log('✅ User has admin role:', user.email)
+      if (data && !error) {
+        console.log('✅ User has admin role (via admin_roles table):', user.email)
         setIsAdmin(true)
-      } else if (!error) {
-        // Fallback: check if user email matches admin email
-        // This is for initial setup before admin_roles table is created
-        const adminEmails = ['jeterothako276@gmail.com', 'admin@dgt.com']
-        if (adminEmails.includes(user.email)) {
-          console.log('✅ Admin email detected:', user.email)
-          setIsAdmin(true)
-        } else {
-          console.log('⚠️ User does not have admin role:', user.email)
-          setIsAdmin(false)
-        }
-      } else {
-        // If table doesn't exist, fall back to email check
-        const adminEmails = ['jeterothako276@gmail.com', 'admin@dgt.com']
-        if (adminEmails.includes(user.email)) {
-          console.log('✅ Admin email detected:', user.email)
-          setIsAdmin(true)
-        } else {
-          console.log('⚠️ User does not have admin role:', user.email)
-          setIsAdmin(false)
-        }
+        return
       }
     } catch (err) {
-      console.log('Error checking admin status:', err)
-      // Fallback to email check
-      const adminEmails = ['jeterothako276@gmail.com', 'admin@dgt.com']
-      if (adminEmails.includes(user.email)) {
+      console.log('admin_roles table not available, using fallback:', err.message)
+    }
+
+    // Method 3: Check raw_app_meta_data for role
+    try {
+      const { data: userData } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      if (userData?.role === 'admin') {
+        console.log('✅ User is admin (via users table):', user.email)
         setIsAdmin(true)
-      } else {
-        setIsAdmin(false)
+        return
       }
+    } catch (err) {
+      console.log('users table role check failed, using final fallback')
+    }
+
+    // Method 4: Fallback - check user email against admin emails
+    const adminEmails = [
+      'jeterothako276@gmail.com',
+      'admin@dgt.com',
+      'admin@dgtsounds.com'
+    ]
+    
+    if (adminEmails.includes(user.email)) {
+      console.log('✅ Admin email detected (fallback):', user.email)
+      setIsAdmin(true)
+    } else {
+      console.log('⚠️ User is not admin:', user.email)
+      setIsAdmin(false)
     }
   }
 
@@ -91,6 +109,9 @@ export function AuthProvider({ children }) {
       password
     })
     if (error) throw error
+    if (data.user) {
+      await checkAdminStatus(data.user)
+    }
     return data
   }
 
@@ -106,6 +127,7 @@ export function AuthProvider({ children }) {
   const signOut = async () => {
     const { error } = await supabase.auth.signOut()
     if (error) throw error
+    setIsAdmin(false)
   }
 
   const value = {

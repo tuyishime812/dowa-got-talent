@@ -1,122 +1,194 @@
--- =====================================================
--- COMPLETE ADMIN SETUP FOR PAMODZI
--- Run this ENTIRE script in Supabase SQL Editor
--- =====================================================
+-- Complete Admin Setup for DGT Sounds
+-- Run this in Supabase SQL Editor
 
--- 1. Create admin_roles table
--- =====================================================
-CREATE TABLE IF NOT EXISTS admin_roles (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL UNIQUE,
-  email TEXT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
-);
+-- ============================================
+-- 1. CREATE ADMIN HELPER FUNCTION
+-- ============================================
 
--- Enable RLS
-ALTER TABLE admin_roles ENABLE ROW LEVEL SECURITY;
-
--- Drop existing policies if they exist
-DROP POLICY IF EXISTS "Admins can view all admin roles" ON admin_roles;
-DROP POLICY IF EXISTS "Super admins can manage admin roles" ON admin_roles;
-
--- Allow authenticated users to view their own admin status
-CREATE POLICY "Admins can view all admin roles"
-  ON admin_roles
-  FOR SELECT
-  USING (true);
-
--- Allow inserts only via service role (security)
-CREATE POLICY "Service role can manage admin roles"
-  ON admin_roles
-  FOR ALL
-  USING (true);
-
--- Create indexes
-CREATE INDEX IF NOT EXISTS idx_admin_roles_user_id ON admin_roles(user_id);
-CREATE INDEX IF NOT EXISTS idx_admin_roles_email ON admin_roles(email);
-
--- 2. Create function to add admin
--- =====================================================
-CREATE OR REPLACE FUNCTION add_admin_role(user_uuid UUID, user_email TEXT)
-RETURNS VOID AS $$
+-- Create security definer function to check admin status
+CREATE OR REPLACE FUNCTION is_admin()
+RETURNS BOOLEAN AS $$
 BEGIN
-  INSERT INTO admin_roles (user_id, email)
-  VALUES (user_uuid, user_email)
-  ON CONFLICT (user_id) DO NOTHING;
+  RETURN EXISTS (
+    SELECT 1 FROM auth.users
+    WHERE id = auth.uid()
+    AND (raw_app_meta_data->>'role') = 'admin'
+  );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 3. Create trigger for updated_at
--- =====================================================
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = TIMEZONE('utc', NOW());
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+-- ============================================
+-- 2. SETUP STORAGE BUCKETS
+-- ============================================
 
-DROP TRIGGER IF EXISTS update_admin_roles_updated_at ON admin_roles;
-CREATE TRIGGER update_admin_roles_updated_at
-  BEFORE UPDATE ON admin_roles
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
+-- Ensure buckets exist
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES 
+  ('music', 'music', true, 52428800, ARRAY['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/aac']),
+  ('covers', 'covers', true, 10485760, ARRAY['image/jpeg', 'image/png', 'image/gif', 'image/webp'])
+ON CONFLICT (id) DO UPDATE SET
+  public = true,
+  file_size_limit = EXCLUDED.file_size_limit,
+  allowed_mime_types = EXCLUDED.allowed_mime_types;
 
--- 4. Grant permissions
--- =====================================================
+-- ============================================
+-- 3. SETUP STORAGE POLICIES
+-- ============================================
+
+-- Drop old policies
+DROP POLICY IF EXISTS "music_select_public" ON storage.objects;
+DROP POLICY IF EXISTS "music_upload_authenticated" ON storage.objects;
+DROP POLICY IF EXISTS "music_delete_admin" ON storage.objects;
+DROP POLICY IF EXISTS "covers_select_public" ON storage.objects;
+DROP POLICY IF EXISTS "covers_upload_authenticated" ON storage.objects;
+DROP POLICY IF EXISTS "covers_delete_admin" ON storage.objects;
+DROP POLICY IF EXISTS "Anyone can view music" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated users can upload music" ON storage.objects;
+DROP POLICY IF EXISTS "Admins can delete music" ON storage.objects;
+DROP POLICY IF EXISTS "Anyone can view covers" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated users can upload covers" ON storage.objects;
+DROP POLICY IF EXISTS "Admins can delete covers" ON storage.objects;
+
+-- Create new storage policies
+CREATE POLICY "music_select_public"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'music');
+
+CREATE POLICY "music_upload_authenticated"
+  ON storage.objects FOR INSERT
+  WITH CHECK (bucket_id = 'music' AND auth.role() = 'authenticated');
+
+CREATE POLICY "music_delete_admin"
+  ON storage.objects FOR DELETE
+  USING (bucket_id = 'music' AND is_admin());
+
+CREATE POLICY "covers_select_public"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'covers');
+
+CREATE POLICY "covers_upload_authenticated"
+  ON storage.objects FOR INSERT
+  WITH CHECK (bucket_id = 'covers' AND auth.role() = 'authenticated');
+
+CREATE POLICY "covers_delete_admin"
+  ON storage.objects FOR DELETE
+  USING (bucket_id = 'covers' AND is_admin());
+
+-- ============================================
+-- 4. SETUP TABLE RLS POLICIES
+-- ============================================
+
+-- Drop old policies
+DROP POLICY IF EXISTS "Anyone can view songs" ON songs;
+DROP POLICY IF EXISTS "Admins can insert songs" ON songs;
+DROP POLICY IF EXISTS "Admins can update songs" ON songs;
+DROP POLICY IF EXISTS "Admins can delete songs" ON songs;
+DROP POLICY IF EXISTS "Anyone can view albums" ON albums;
+DROP POLICY IF EXISTS "Admins can insert albums" ON albums;
+DROP POLICY IF EXISTS "Admins can update albums" ON albums;
+DROP POLICY IF EXISTS "Admins can delete albums" ON albums;
+DROP POLICY IF EXISTS "Anyone can view artists" ON artists;
+DROP POLICY IF EXISTS "Admins can insert artists" ON artists;
+DROP POLICY IF EXISTS "Admins can update artists" ON artists;
+DROP POLICY IF EXISTS "Admins can delete artists" ON artists;
+
+-- Create new policies using is_admin() function
+-- Songs
+CREATE POLICY "Anyone can view songs"
+  ON songs FOR SELECT
+  USING (true);
+
+CREATE POLICY "Admins can insert songs"
+  ON songs FOR INSERT
+  WITH CHECK (is_admin());
+
+CREATE POLICY "Admins can update songs"
+  ON songs FOR UPDATE
+  USING (is_admin());
+
+CREATE POLICY "Admins can delete songs"
+  ON songs FOR DELETE
+  USING (is_admin());
+
+-- Albums
+CREATE POLICY "Anyone can view albums"
+  ON albums FOR SELECT
+  USING (true);
+
+CREATE POLICY "Admins can insert albums"
+  ON albums FOR INSERT
+  WITH CHECK (is_admin());
+
+CREATE POLICY "Admins can update albums"
+  ON albums FOR UPDATE
+  USING (is_admin());
+
+CREATE POLICY "Admins can delete albums"
+  ON albums FOR DELETE
+  USING (is_admin());
+
+-- Artists
+CREATE POLICY "Anyone can view artists"
+  ON artists FOR SELECT
+  USING (true);
+
+CREATE POLICY "Admins can insert artists"
+  ON artists FOR INSERT
+  WITH CHECK (is_admin());
+
+CREATE POLICY "Admins can update artists"
+  ON artists FOR UPDATE
+  USING (is_admin());
+
+CREATE POLICY "Admins can delete artists"
+  ON artists FOR DELETE
+  USING (is_admin());
+
+-- ============================================
+-- 5. GRANT PERMISSIONS
+-- ============================================
+
+GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon;
+GRANT EXECUTE ON FUNCTION is_admin() TO authenticated;
 GRANT USAGE ON SCHEMA public TO authenticated;
-GRANT SELECT ON admin_roles TO authenticated;
 
--- 5. Add current admin users
--- =====================================================
--- Add admin@pamodzi.com if exists
-DO $$
-DECLARE
-  user_record RECORD;
-BEGIN
-  SELECT id, email INTO user_record
-  FROM auth.users
-  WHERE email = 'admin@pamodzi.com';
+-- ============================================
+-- 6. MAKE YOUR USER ADMIN
+-- ============================================
 
-  IF user_record.id IS NOT NULL THEN
-    INSERT INTO admin_roles (user_id, email)
-    VALUES (user_record.id, user_record.email)
-    ON CONFLICT (user_id) DO NOTHING;
-    RAISE NOTICE 'Added admin@pamodzi.com as admin';
-  END IF;
-END $$;
+-- Update your user to have admin role
+-- Replace with your email if different
+UPDATE auth.users
+SET raw_app_meta_data = raw_app_meta_data || '{"role": "admin"}'::jsonb
+WHERE email = 'jeterothako276@gmail.com';
 
--- Add mikemasanga@gmail.com if exists
-DO $$
-DECLARE
-  user_record RECORD;
-BEGIN
-  SELECT id, email INTO user_record
-  FROM auth.users
-  WHERE email = 'mikemasanga@gmail.com';
-  
-  IF user_record.id IS NOT NULL THEN
-    INSERT INTO admin_roles (user_id, email)
-    VALUES (user_record.id, user_record.email)
-    ON CONFLICT (user_id) DO NOTHING;
-    RAISE NOTICE 'Added mikemasanga@gmail.com as admin';
-  END IF;
-END $$;
+-- Also update raw_user_meta_data for consistency
+UPDATE auth.users
+SET raw_user_meta_data = raw_user_meta_data || '{"role": "admin"}'::jsonb
+WHERE email = 'jeterothako276@gmail.com';
 
--- 6. Verification query
--- =====================================================
--- Run this to see all admins
+-- ============================================
+-- 7. VERIFICATION
+-- ============================================
+
+-- Check buckets
+SELECT id, name, public FROM storage.buckets;
+
+-- Check current user is admin
 SELECT 
-  ar.id,
-  ar.user_id,
-  ar.email,
-  ar.created_at,
-  u.created_at as user_created_at
-FROM admin_roles ar
-LEFT JOIN auth.users u ON u.id = ar.user_id
-ORDER BY ar.created_at DESC;
+  auth.uid() as user_id,
+  auth.jwt()->>'email' as email,
+  raw_app_meta_data->>'role' as app_role,
+  raw_user_meta_data->>'role' as user_role,
+  is_admin() as is_admin_result
+FROM auth.users
+WHERE id = auth.uid();
 
--- 7. Success message
--- =====================================================
-SELECT '✅ Admin setup complete! Check the results above to see current admins.' as status;
+-- Check policies
+SELECT policyname, cmd, tablename FROM pg_policies 
+WHERE schemaname = 'public'
+ORDER BY tablename, policyname;
+
+-- Test is_admin function
+SELECT is_admin() as current_user_is_admin;

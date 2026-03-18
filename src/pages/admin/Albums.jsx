@@ -28,13 +28,15 @@ export default function AdminAlbums() {
 
   const fetchAlbums = async () => {
     try {
-      const { data: albumsData } = await supabase
+      const { data, error } = await supabase
         .from('albums')
         .select('*, artists(name)')
         .order('created_at', { ascending: false })
-      setAlbums(albumsData || [])
+      if (error) throw error
+      setAlbums(data || [])
     } catch (error) {
       console.error('Error fetching albums:', error)
+      toast.error('Failed to load albums')
     } finally {
       setLoading(false)
     }
@@ -78,29 +80,57 @@ export default function AdminAlbums() {
 
     setUploading(true)
     try {
+      // Validate file type
+      const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+      if (!validImageTypes.includes(file.type) && !file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+        throw new Error('Please upload a valid image file (JPG, PNG, GIF, WEBP).')
+      }
+
+      // Validate file size (max 10MB)
+      const maxSize = 10 * 1024 * 1024
+      if (file.size > maxSize) {
+        throw new Error('File size exceeds 10MB limit.')
+      }
+
       const fileExt = file.name.split('.').pop()
-      // Generate filename from artist name and album title
       const artistSlug = formData.artist_name
         ? formData.artist_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
         : 'unknown'
       const titleSlug = formData.title
         ? formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
         : 'untitled'
-      const fileName = `${artistSlug}-${titleSlug}.${fileExt}`
+      const fileName = `albums/${artistSlug}-${titleSlug}-${Date.now()}.${fileExt}`
 
-      const { error: uploadError } = await supabase.storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('covers')
-        .upload(fileName, file, { upsert: true })
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true
+        })
 
-      if (uploadError) throw uploadError
+      if (uploadError) {
+        if (uploadError.message.includes('Bucket not found') || uploadError.message.includes('404')) {
+          throw new Error('Storage bucket not found. Please contact administrator.')
+        }
+        throw uploadError
+      }
 
-      const { data: { publicUrl } } = supabase.storage
+      const { data: urlData } = supabase.storage
         .from('covers')
         .getPublicUrl(fileName)
 
+      const publicUrl = urlData?.publicUrl
+      if (!publicUrl) {
+        throw new Error('Failed to get public URL')
+      }
+
       setFormData({ ...formData, cover_url: publicUrl })
+      toast.success('Cover uploaded successfully!')
     } catch (error) {
-      setError('Failed to upload cover: ' + error.message)
+      console.error('Cover upload error:', error)
+      const errorMsg = error.message || 'Failed to upload cover'
+      setError(errorMsg)
+      toast.error(errorMsg)
     } finally {
       setUploading(false)
     }
@@ -118,8 +148,7 @@ export default function AdminAlbums() {
     try {
       // Find or create artist
       let artistId = null
-      
-      // Check if artist exists
+
       const { data: existingArtist, error: fetchArtistError } = await supabase
         .from('artists')
         .select('id')
@@ -133,17 +162,13 @@ export default function AdminAlbums() {
       if (existingArtist) {
         artistId = existingArtist.id
       } else {
-        // Create new artist
         const { data: newArtist, error: artistError } = await supabase
           .from('artists')
           .insert([{ name: formData.artist_name }])
           .select('id')
           .single()
-        
-        if (artistError) {
-          console.error('Artist creation error:', artistError)
-          throw new Error('Failed to create artist: ' + artistError.message)
-        }
+
+        if (artistError) throw artistError
         artistId = newArtist.id
       }
 
@@ -156,22 +181,25 @@ export default function AdminAlbums() {
         featured: formData.featured
       }
 
+      let resultError
       if (editingAlbum) {
         const { error } = await supabase.from('albums').update(albumData).eq('id', editingAlbum.id)
-        if (error) throw error
+        resultError = error
       } else {
         const { error } = await supabase.from('albums').insert([albumData])
-        if (error) throw error
+        resultError = error
       }
+
+      if (resultError) throw resultError
 
       handleCloseModal()
       fetchAlbums()
       toast.success(editingAlbum ? 'Album updated successfully!' : 'Album added successfully!')
     } catch (error) {
       console.error('Album save error:', error)
-      const errorMsg = 'Failed to save album: ' + error.message
-      toast.error(errorMsg)
+      const errorMsg = error.message || 'Failed to save album'
       setError(errorMsg)
+      toast.error(errorMsg)
     }
   }
 
@@ -180,14 +208,11 @@ export default function AdminAlbums() {
 
     try {
       const { error } = await supabase.from('albums').delete().eq('id', id)
-      if (error) {
-        console.error('Delete error:', error)
-        throw error
-      }
+      if (error) throw error
       fetchAlbums()
       toast.success('Album deleted successfully!')
     } catch (error) {
-      console.error('Failed to delete album:', error)
+      console.error('Delete error:', error)
       toast.error('Failed to delete album: ' + error.message)
     }
   }
@@ -213,8 +238,8 @@ export default function AdminAlbums() {
               albums.map((album) => (
                 <div key={album.id} className="album-card">
                   <div className="album-cover-wrapper">
-                    <img 
-                      src={album.cover_url || 'https://via.placeholder.com/200'} 
+                    <img
+                      src={album.cover_url || 'https://via.placeholder.com/200'}
                       alt={album.title}
                       className="album-cover"
                     />
@@ -230,14 +255,14 @@ export default function AdminAlbums() {
                       )}
                     </div>
                     <div className="album-actions">
-                      <button 
+                      <button
                         className="btn btn-sm btn-secondary"
                         onClick={() => handleOpenModal(album)}
                       >
                         <Edit size={16} />
                         Edit
                       </button>
-                      <button 
+                      <button
                         className="btn btn-sm btn-danger"
                         onClick={() => handleDelete(album.id)}
                       >
@@ -297,13 +322,12 @@ export default function AdminAlbums() {
                 </div>
 
                 <div className="form-group">
-                  <label>Description (Optional)</label>
+                  <label>Description</label>
                   <textarea
                     value={formData.description || ''}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     rows={3}
                     placeholder="Album description..."
-                    className="form-textarea"
                   />
                 </div>
 

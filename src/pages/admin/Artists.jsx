@@ -26,10 +26,12 @@ export default function AdminArtists() {
 
   const fetchArtists = async () => {
     try {
-      const { data: artistsData } = await supabase.from('artists').select('*').order('name')
-      setArtists(artistsData || [])
+      const { data, error } = await supabase.from('artists').select('*').order('name')
+      if (error) throw error
+      setArtists(data || [])
     } catch (error) {
       console.error('Error fetching artists:', error)
+      toast.error('Failed to load artists')
     } finally {
       setLoading(false)
     }
@@ -69,26 +71,54 @@ export default function AdminArtists() {
 
     setUploading(true)
     try {
+      // Validate file type
+      const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+      if (!validImageTypes.includes(file.type) && !file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+        throw new Error('Please upload a valid image file (JPG, PNG, GIF, WEBP).')
+      }
+
+      // Validate file size (max 10MB)
+      const maxSize = 10 * 1024 * 1024
+      if (file.size > maxSize) {
+        throw new Error('File size exceeds 10MB limit.')
+      }
+
       const fileExt = file.name.split('.').pop()
-      // Generate filename from artist name
       const artistSlug = formData.name
         ? formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
         : 'unknown'
-      const fileName = `${artistSlug}.${fileExt}`
+      const fileName = `artists/${artistSlug}-${Date.now()}.${fileExt}`
 
-      const { error: uploadError } = await supabase.storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('covers')
-        .upload(fileName, file, { upsert: true })
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true
+        })
 
-      if (uploadError) throw uploadError
+      if (uploadError) {
+        if (uploadError.message.includes('Bucket not found') || uploadError.message.includes('404')) {
+          throw new Error('Storage bucket not found. Please contact administrator.')
+        }
+        throw uploadError
+      }
 
-      const { data: { publicUrl } } = supabase.storage
+      const { data: urlData } = supabase.storage
         .from('covers')
         .getPublicUrl(fileName)
 
+      const publicUrl = urlData?.publicUrl
+      if (!publicUrl) {
+        throw new Error('Failed to get public URL')
+      }
+
       setFormData({ ...formData, image_url: publicUrl })
+      toast.success('Image uploaded successfully!')
     } catch (error) {
-      setError('Failed to upload image: ' + error.message)
+      console.error('Image upload error:', error)
+      const errorMsg = error.message || 'Failed to upload image'
+      setError(errorMsg)
+      toast.error(errorMsg)
     } finally {
       setUploading(false)
     }
@@ -111,20 +141,25 @@ export default function AdminArtists() {
         verified: formData.verified
       }
 
+      let resultError
       if (editingArtist) {
         const { error } = await supabase.from('artists').update(artistData).eq('id', editingArtist.id)
-        if (error) throw error
+        resultError = error
       } else {
         const { error } = await supabase.from('artists').insert([artistData])
-        if (error) throw error
+        resultError = error
       }
+
+      if (resultError) throw resultError
 
       handleCloseModal()
       fetchArtists()
       toast.success(editingArtist ? 'Artist updated successfully!' : 'Artist added successfully!')
     } catch (error) {
-      setError('Failed to save artist: ' + error.message)
-      toast.error('Failed to save artist: ' + error.message)
+      console.error('Artist save error:', error)
+      const errorMsg = error.message || 'Failed to save artist'
+      setError(errorMsg)
+      toast.error(errorMsg)
     }
   }
 
@@ -133,14 +168,11 @@ export default function AdminArtists() {
 
     try {
       const { error } = await supabase.from('artists').delete().eq('id', id)
-      if (error) {
-        console.error('Delete error:', error)
-        throw error
-      }
+      if (error) throw error
       fetchArtists()
       toast.success('Artist deleted successfully!')
     } catch (error) {
-      console.error('Failed to delete artist:', error)
+      console.error('Delete error:', error)
       toast.error('Failed to delete artist: ' + error.message)
     }
   }
@@ -166,8 +198,8 @@ export default function AdminArtists() {
               artists.map((artist) => (
                 <div key={artist.id} className="artist-card">
                   <div className="artist-image-wrapper">
-                    <img 
-                      src={artist.image_url || 'https://via.placeholder.com/200?text=Artist'} 
+                    <img
+                      src={artist.image_url || 'https://via.placeholder.com/200?text=Artist'}
                       alt={artist.name}
                       className="artist-image"
                     />
@@ -183,14 +215,14 @@ export default function AdminArtists() {
                       <p className="artist-bio">{artist.bio.substring(0, 80)}...</p>
                     )}
                     <div className="artist-actions">
-                      <button 
+                      <button
                         className="btn btn-sm btn-secondary"
                         onClick={() => handleOpenModal(artist)}
                       >
                         <Edit size={16} />
                         Edit
                       </button>
-                      <button 
+                      <button
                         className="btn btn-sm btn-danger"
                         onClick={() => handleDelete(artist.id)}
                       >
