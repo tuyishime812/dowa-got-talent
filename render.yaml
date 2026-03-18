@@ -1,15 +1,17 @@
 services:
   - type: web
-    name: pamodzi
-    env: node
-    region: frankfurt
-    plan: free
-    buildCommand: npm install && npm run build
-    startCommand: npx serve dist -s -l $PORT
+    name: dgt-sounds
+    env: static
+    buildCommand: npm run build
+    startCommand: npx serve -s dist -l ${PORT:-5173}
     envVars:
+      - key: NODE_VERSION
+        value: 20
       - key: VITE_SUPABASE_URL
         sync: false
       - key: VITE_SUPABASE_ANON_KEY
+        sync: false
+      - key: VITE_SITE_URL
         sync: false
     headers:
       - path: /*
@@ -21,9 +23,3 @@ services:
       - path: /*
         name: X-XSS-Protection
         value: 1; mode=block
-      - path: /*
-        name: Cache-Control
-        value: public, max-age=300
-      - path: /*
-        name: Access-Control-Allow-Origin
-        value: '*'
