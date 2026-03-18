@@ -107,31 +107,57 @@ export default function AdminSongs() {
     console.log('Starting audio upload:', file.name, 'Size:', file.size, 'Type:', file.type)
     setUploading(true)
     try {
+      // Validate file type
+      const validAudioTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/aac']
+      if (!validAudioTypes.includes(file.type) && !file.name.match(/\.(mp3|wav|ogg|m4a|aac)$/i)) {
+        throw new Error('Invalid file type. Please upload a valid audio file (MP3, WAV, OGG, M4A, AAC).')
+      }
+
+      // Validate file size (max 50MB)
+      const maxSize = 50 * 1024 * 1024
+      if (file.size > maxSize) {
+        throw new Error('File size exceeds 50MB limit.')
+      }
+
       const fileExt = file.name.split('.').pop()
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+      const fileName = `audio/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
 
       console.log('Uploading to music bucket:', fileName)
+      
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('music')
-        .upload(fileName, file)
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
 
       if (uploadError) {
         console.error('Upload error:', uploadError)
+        if (uploadError.message.includes('Bucket not found') || uploadError.message.includes('404')) {
+          throw new Error('Storage bucket not found. Please run the fix-all-storage.sql script in Supabase SQL Editor.')
+        }
         throw uploadError
       }
 
       console.log('Upload successful:', uploadData)
 
-      const { data: { publicUrl } } = supabase.storage
+      // Get public URL with proper encoding
+      const { data: urlData } = supabase.storage
         .from('music')
         .getPublicUrl(fileName)
+
+      const publicUrl = urlData?.publicUrl
+      
+      if (!publicUrl) {
+        throw new Error('Failed to get public URL for uploaded file')
+      }
 
       console.log('Public URL:', publicUrl)
       setFormData({ ...formData, audio_url: publicUrl })
       toast.success('Audio uploaded successfully!')
     } catch (error) {
       console.error('Audio upload error:', error)
-      const errorMsg = 'Failed to upload audio: ' + error.message
+      const errorMsg = error.message || 'Failed to upload audio'
       setError(errorMsg)
       toast.error(errorMsg)
     } finally {
@@ -146,6 +172,18 @@ export default function AdminSongs() {
     console.log('Starting cover upload:', file.name, 'Size:', file.size, 'Type:', file.type)
     setUploading(true)
     try {
+      // Validate file type
+      const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+      if (!validImageTypes.includes(file.type) && !file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+        throw new Error('Invalid file type. Please upload a valid image file (JPG, PNG, GIF, WEBP).')
+      }
+
+      // Validate file size (max 10MB)
+      const maxSize = 10 * 1024 * 1024
+      if (file.size > maxSize) {
+        throw new Error('File size exceeds 10MB limit.')
+      }
+
       const fileExt = file.name.split('.').pop()
       // Generate filename from artist name and song title
       const artistSlug = formData.artist_name
@@ -154,30 +192,44 @@ export default function AdminSongs() {
       const titleSlug = formData.title
         ? formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
         : 'untitled'
-      const fileName = `${artistSlug}-${titleSlug}.${fileExt}`
+      const fileName = `covers/${artistSlug}-${titleSlug}-${Date.now()}.${fileExt}`
 
       console.log('Uploading to covers bucket:', fileName)
+      
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('covers')
-        .upload(fileName, file, { upsert: true })
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true
+        })
 
       if (uploadError) {
         console.error('Upload error:', uploadError)
+        if (uploadError.message.includes('Bucket not found') || uploadError.message.includes('404')) {
+          throw new Error('Storage bucket not found. Please run the fix-all-storage.sql script in Supabase SQL Editor.')
+        }
         throw uploadError
       }
 
       console.log('Upload successful:', uploadData)
 
-      const { data: { publicUrl } } = supabase.storage
+      // Get public URL with proper encoding
+      const { data: urlData } = supabase.storage
         .from('covers')
         .getPublicUrl(fileName)
+
+      const publicUrl = urlData?.publicUrl
+      
+      if (!publicUrl) {
+        throw new Error('Failed to get public URL for uploaded file')
+      }
 
       console.log('Public URL:', publicUrl)
       setFormData({ ...formData, cover_url: publicUrl })
       toast.success('Cover uploaded successfully!')
     } catch (error) {
       console.error('Cover upload error:', error)
-      const errorMsg = 'Failed to upload cover: ' + error.message
+      const errorMsg = error.message || 'Failed to upload cover'
       setError(errorMsg)
       toast.error(errorMsg)
     } finally {
