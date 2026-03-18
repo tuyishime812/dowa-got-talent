@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useMusic } from '../context/MusicContext'
-import { Play, Download, Heart, Share2, ArrowLeft, Clock, TrendingUp, Facebook, Twitter, MessageCircle, Link as LinkIcon, Whatsapp } from 'lucide-react'
+import { Play, Download, Heart, Share2, ArrowLeft, Clock, TrendingUp, Facebook, Twitter, MessageCircle, Link as LinkIcon } from 'lucide-react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import { useToast } from '../context/ToastContext'
@@ -256,7 +256,7 @@ export default function SongDetail() {
                   <Twitter size={24} />
                 </button>
                 <button className="share-icon-btn whatsapp" onClick={shareToWhatsapp} title="Share on WhatsApp">
-                  <Whatsapp size={24} />
+                  <MessageCircle size={24} />
                 </button>
                 <button className="share-icon-btn copy" onClick={copyLink} title="Copy Link">
                   <LinkIcon size={24} />
