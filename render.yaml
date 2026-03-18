@@ -1,15 +1,24 @@
 services:
+  # Web Service for the React app
   - type: web
     name: dgt-sounds
+    region: oregon
+    plan: free
     env: node
-    buildCommand: npm run build
-    startCommand: npx serve -s dist -p ${PORT:-5173}
+    rootDir: .
+    buildCommand: npm install && npm run build
+    startCommand: npx serve -s dist -p $PORT
+    healthCheckPath: /
     envVars:
       - key: NODE_VERSION
-        value: 20
+        value: 20.x
       - key: VITE_SUPABASE_URL
         sync: false
       - key: VITE_SUPABASE_ANON_KEY
         sync: false
       - key: VITE_SITE_URL
         sync: false
+    disk:
+      name: node-modules
+      mountPath: /opt/render/project/src/node_modules
+      sizeGB: 1
