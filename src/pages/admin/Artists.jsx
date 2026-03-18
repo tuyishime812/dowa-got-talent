@@ -70,11 +70,15 @@ export default function AdminArtists() {
     setUploading(true)
     try {
       const fileExt = file.name.split('.').pop()
-      const fileName = `artist-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+      // Generate filename from artist name
+      const artistSlug = formData.name
+        ? formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+        : 'unknown'
+      const fileName = `${artistSlug}.${fileExt}`
 
       const { error: uploadError } = await supabase.storage
         .from('covers')
-        .upload(fileName, file)
+        .upload(fileName, file, { upsert: true })
 
       if (uploadError) throw uploadError
 

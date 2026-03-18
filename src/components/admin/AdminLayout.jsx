@@ -103,13 +103,21 @@ export default function AdminLayout({ children }) {
       {/* Main Content */}
       <main className="admin-main">
         <header className="admin-header">
-          <h1 className="page-title">
-            {navItems.find(item => item.path === location.pathname)?.label || 'Admin'}
-          </h1>
+          <div className="header-left">
+            <button
+              className="mobile-menu-toggle"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+            >
+              <Menu size={20} />
+            </button>
+            <h1 className="page-title">
+              {navItems.find(item => item.path === location.pathname)?.label || 'Admin'}
+            </h1>
+          </div>
           <div className="header-actions">
-            <a 
-              href={import.meta.env.VITE_SITE_URL || window.location.origin} 
-              target="_blank" 
+            <a
+              href={import.meta.env.VITE_SITE_URL || window.location.origin}
+              target="_blank"
               rel="noopener noreferrer"
               className="btn btn-secondary btn-sm"
             >

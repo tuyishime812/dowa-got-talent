@@ -15,6 +15,7 @@ export default function AdminAlbums() {
     artist_name: '',
     cover_url: '',
     release_date: '',
+    description: '',
     featured: false
   })
   const [uploading, setUploading] = useState(false)
@@ -47,6 +48,7 @@ export default function AdminAlbums() {
         artist_name: album.artists?.name || '',
         cover_url: album.cover_url || '',
         release_date: album.release_date || '',
+        description: album.description || '',
         featured: album.featured
       })
     } else {
@@ -56,6 +58,7 @@ export default function AdminAlbums() {
         artist_name: '',
         cover_url: '',
         release_date: '',
+        description: '',
         featured: false
       })
     }
@@ -76,11 +79,18 @@ export default function AdminAlbums() {
     setUploading(true)
     try {
       const fileExt = file.name.split('.').pop()
-      const fileName = `album-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+      // Generate filename from artist name and album title
+      const artistSlug = formData.artist_name
+        ? formData.artist_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+        : 'unknown'
+      const titleSlug = formData.title
+        ? formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+        : 'untitled'
+      const fileName = `${artistSlug}-${titleSlug}.${fileExt}`
 
       const { error: uploadError } = await supabase.storage
         .from('covers')
-        .upload(fileName, file)
+        .upload(fileName, file, { upsert: true })
 
       if (uploadError) throw uploadError
 
@@ -142,6 +152,7 @@ export default function AdminAlbums() {
         artist_id: artistId,
         cover_url: formData.cover_url || null,
         release_date: formData.release_date || null,
+        description: formData.description || null,
         featured: formData.featured
       }
 
@@ -282,6 +293,17 @@ export default function AdminAlbums() {
                     type="date"
                     value={formData.release_date}
                     onChange={(e) => setFormData({ ...formData, release_date: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Description (Optional)</label>
+                  <textarea
+                    value={formData.description || ''}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    rows={3}
+                    placeholder="Album description..."
+                    className="form-textarea"
                   />
                 </div>
 

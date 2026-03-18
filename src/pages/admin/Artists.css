@@ -101,13 +101,55 @@
 }
 
 @media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .page-header h2 {
+    font-size: 18px;
+  }
+
   .artists-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .modal {
+    max-width: 95vw;
+    max-height: 95vh;
+  }
+
+  .modal-header {
+    padding: 16px;
+  }
+
+  .modal-form {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .modal-actions {
+    flex-direction: column;
+  }
+
+  .modal-actions button {
+    width: 100%;
   }
 }
 
 @media (max-width: 500px) {
   .artists-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .artist-info h3 {
+    font-size: 14px;
+  }
+
+  .artist-bio {
+    font-size: 11px;
   }
 }
