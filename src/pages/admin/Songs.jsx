@@ -104,24 +104,36 @@ export default function AdminSongs() {
     const file = e.target.files[0]
     if (!file) return
 
+    console.log('Starting audio upload:', file.name, 'Size:', file.size, 'Type:', file.type)
     setUploading(true)
     try {
       const fileExt = file.name.split('.').pop()
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
 
-      const { error: uploadError } = await supabase.storage
+      console.log('Uploading to music bucket:', fileName)
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('music')
         .upload(fileName, file)
 
-      if (uploadError) throw uploadError
+      if (uploadError) {
+        console.error('Upload error:', uploadError)
+        throw uploadError
+      }
+
+      console.log('Upload successful:', uploadData)
 
       const { data: { publicUrl } } = supabase.storage
         .from('music')
         .getPublicUrl(fileName)
 
+      console.log('Public URL:', publicUrl)
       setFormData({ ...formData, audio_url: publicUrl })
+      toast.success('Audio uploaded successfully!')
     } catch (error) {
-      setError('Failed to upload audio: ' + error.message)
+      console.error('Audio upload error:', error)
+      const errorMsg = 'Failed to upload audio: ' + error.message
+      setError(errorMsg)
+      toast.error(errorMsg)
     } finally {
       setUploading(false)
     }
@@ -131,6 +143,7 @@ export default function AdminSongs() {
     const file = e.target.files[0]
     if (!file) return
 
+    console.log('Starting cover upload:', file.name, 'Size:', file.size, 'Type:', file.type)
     setUploading(true)
     try {
       const fileExt = file.name.split('.').pop()
@@ -143,19 +156,30 @@ export default function AdminSongs() {
         : 'untitled'
       const fileName = `${artistSlug}-${titleSlug}.${fileExt}`
 
-      const { error: uploadError } = await supabase.storage
+      console.log('Uploading to covers bucket:', fileName)
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('covers')
         .upload(fileName, file, { upsert: true })
 
-      if (uploadError) throw uploadError
+      if (uploadError) {
+        console.error('Upload error:', uploadError)
+        throw uploadError
+      }
+
+      console.log('Upload successful:', uploadData)
 
       const { data: { publicUrl } } = supabase.storage
         .from('covers')
         .getPublicUrl(fileName)
 
+      console.log('Public URL:', publicUrl)
       setFormData({ ...formData, cover_url: publicUrl })
+      toast.success('Cover uploaded successfully!')
     } catch (error) {
-      setError('Failed to upload cover: ' + error.message)
+      console.error('Cover upload error:', error)
+      const errorMsg = 'Failed to upload cover: ' + error.message
+      setError(errorMsg)
+      toast.error(errorMsg)
     } finally {
       setUploading(false)
     }
