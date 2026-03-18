@@ -1,5 +1,5 @@
--- COMPLETE FIX - Copy ALL of this and run at once in Supabase SQL Editor
--- This will fix everything
+-- COMPLETE FIX - Corrected Version
+-- Run this ALL at once in Supabase SQL Editor
 
 -- 1. Create admin_roles table
 CREATE TABLE IF NOT EXISTS public.admin_roles (
@@ -45,12 +45,18 @@ DROP POLICY IF EXISTS "covers_select_public" ON storage.objects;
 DROP POLICY IF EXISTS "covers_upload_authenticated" ON storage.objects;
 DROP POLICY IF EXISTS "covers_delete_admin" ON storage.objects;
 
--- 6. Create new simple storage policies
+-- 6. Create new storage policies (corrected syntax)
 CREATE POLICY "music_all" ON storage.objects FOR ALL TO authenticated
-USING (bucket_id = 'music') WITH CHECK (bucket_id = 'music');
+USING (bucket_id = 'music');
+
+CREATE POLICY "music_all_check" ON storage.objects FOR INSERT TO authenticated
+WITH CHECK (bucket_id = 'music');
 
 CREATE POLICY "covers_all" ON storage.objects FOR ALL TO authenticated
-USING (bucket_id = 'covers') WITH CHECK (bucket_id = 'covers');
+USING (bucket_id = 'covers');
+
+CREATE POLICY "covers_all_check" ON storage.objects FOR INSERT TO authenticated
+WITH CHECK (bucket_id = 'covers');
 
 CREATE POLICY "music_public" ON storage.objects FOR SELECT TO anon
 USING (bucket_id = 'music');
@@ -77,21 +83,30 @@ ALTER TABLE songs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE albums ENABLE ROW LEVEL SECURITY;
 ALTER TABLE artists ENABLE ROW LEVEL SECURITY;
 
--- 9. Create table policies
-CREATE POLICY "Anyone can view songs" ON songs FOR SELECT USING (true);
-CREATE POLICY "Admins can insert songs" ON songs FOR INSERT USING (public.is_admin());
-CREATE POLICY "Admins can update songs" ON songs FOR UPDATE USING (public.is_admin());
-CREATE POLICY "Admins can delete songs" ON songs FOR DELETE USING (public.is_admin());
+-- 9. Create table policies (separate USING and WITH CHECK)
+CREATE POLICY "songs_view" ON songs FOR SELECT USING (true);
 
-CREATE POLICY "Anyone can view albums" ON albums FOR SELECT USING (true);
-CREATE POLICY "Admins can insert albums" ON albums FOR INSERT USING (public.is_admin());
-CREATE POLICY "Admins can update albums" ON albums FOR UPDATE USING (public.is_admin());
-CREATE POLICY "Admins can delete albums" ON albums FOR DELETE USING (public.is_admin());
+CREATE POLICY "songs_insert" ON songs FOR INSERT WITH CHECK (public.is_admin());
 
-CREATE POLICY "Anyone can view artists" ON artists FOR SELECT USING (true);
-CREATE POLICY "Admins can insert artists" ON artists FOR INSERT USING (public.is_admin());
-CREATE POLICY "Admins can update artists" ON artists FOR UPDATE USING (public.is_admin());
-CREATE POLICY "Admins can delete artists" ON artists FOR DELETE USING (public.is_admin());
+CREATE POLICY "songs_update" ON songs FOR UPDATE USING (public.is_admin());
+
+CREATE POLICY "songs_delete" ON songs FOR DELETE USING (public.is_admin());
+
+CREATE POLICY "albums_view" ON albums FOR SELECT USING (true);
+
+CREATE POLICY "albums_insert" ON albums FOR INSERT WITH CHECK (public.is_admin());
+
+CREATE POLICY "albums_update" ON albums FOR UPDATE USING (public.is_admin());
+
+CREATE POLICY "albums_delete" ON albums FOR DELETE USING (public.is_admin());
+
+CREATE POLICY "artists_view" ON artists FOR SELECT USING (true);
+
+CREATE POLICY "artists_insert" ON artists FOR INSERT WITH CHECK (public.is_admin());
+
+CREATE POLICY "artists_update" ON artists FOR UPDATE USING (public.is_admin());
+
+CREATE POLICY "artists_delete" ON artists FOR DELETE USING (public.is_admin());
 
 -- 10. Grant permissions
 GRANT ALL ON public.admin_roles TO authenticated;
@@ -100,7 +115,7 @@ GRANT ALL ON public.albums TO authenticated;
 GRANT ALL ON public.artists TO authenticated;
 GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated;
 
--- 11. VERIFICATION - Check if it worked
+-- 11. Verification
 SELECT '=== ADMIN ROLES ===' as info;
 SELECT * FROM public.admin_roles;
 
@@ -110,4 +125,4 @@ SELECT public.is_admin() as am_i_admin;
 SELECT '=== BUCKETS ===' as info;
 SELECT id, name, public FROM storage.buckets;
 
-SELECT '=== DONE ===' as info;
+SELECT '=== COMPLETE ===' as info;
