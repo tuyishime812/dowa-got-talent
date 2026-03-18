@@ -7,6 +7,7 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
+    allowedHosts: ['dgt-sounds.onrender.com', '.onrender.com'],
     historyApiFallback: true
   },
   build: {
