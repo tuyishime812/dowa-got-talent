@@ -134,11 +134,18 @@ export default function AdminSongs() {
     setUploading(true)
     try {
       const fileExt = file.name.split('.').pop()
-      const fileName = `cover-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+      // Generate filename from artist name and song title
+      const artistSlug = formData.artist_name
+        ? formData.artist_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+        : 'unknown'
+      const titleSlug = formData.title
+        ? formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+        : 'untitled'
+      const fileName = `${artistSlug}-${titleSlug}.${fileExt}`
 
       const { error: uploadError } = await supabase.storage
         .from('covers')
-        .upload(fileName, file)
+        .upload(fileName, file, { upsert: true })
 
       if (uploadError) throw uploadError
 
