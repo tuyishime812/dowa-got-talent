@@ -23,7 +23,10 @@ export default function SongDetail() {
 
   const fetchSong = async () => {
     try {
-      const { data, error } = await supabase
+      // Check if id is a slug (contains hyphens, no UUID format)
+      const isSlug = id && (id.includes('-') && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))
+      
+      const query = supabase
         .from('songs')
         .select(`
           *,
@@ -31,8 +34,10 @@ export default function SongDetail() {
           albums (title),
           genres (name)
         `)
-        .eq('id', id)
-        .single()
+
+      const { data, error } = isSlug
+        ? query.eq('slug', id).single()
+        : query.eq('id', id).single()
 
       if (error) throw error
       setSong(data)
@@ -120,7 +125,9 @@ export default function SongDetail() {
     }
   }
 
-  const shareUrl = `${window.location.origin}/song/${id}`
+  // Use slug for share URL if available, otherwise use UUID
+  const songIdentifier = song?.slug || song?.id || id
+  const shareUrl = `${window.location.origin}/song/${songIdentifier}`
   const shareText = `Check out "${song?.title}" by ${song?.artists?.name || 'Unknown Artist'} on DGT Sounds!`
 
   const shareToFacebook = () => {

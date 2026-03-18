@@ -283,7 +283,9 @@ export default function AdminSongs() {
   }
 
   const handleShare = async (song) => {
-    const shareUrl = `${window.location.origin}/song/${song.id}`
+    // Use slug if available, otherwise use UUID
+    const songIdentifier = song.slug || song.id
+    const shareUrl = `${window.location.origin}/song/${songIdentifier}`
     const shareData = {
       title: song.title,
       text: `Check out "${song.title}" by ${song.artists?.name || 'Unknown Artist'} on DGT Sounds!`,
