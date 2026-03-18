@@ -18,7 +18,3 @@ services:
         sync: false
       - key: VITE_SITE_URL
         sync: false
-    disk:
-      name: node-modules
-      mountPath: /opt/render/project/src/node_modules
-      sizeGB: 1
